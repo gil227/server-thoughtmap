@@ -16,8 +16,11 @@ export class AuthService {
 
         const hashed = await bcrypt.hash(password, 10);
         const user = await this.usersService.create(email, hashed);
+        const tokens = this.generateTokens(user.id, user.email);
 
-        return this.generateTokens(user.id, user.email);
+        await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
+
+        return tokens;
     }
 
     async login(email: string, password: string) {
@@ -27,7 +30,11 @@ export class AuthService {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다');
 
-        return this.generateTokens(user.id, user.email);
+        const tokens = this.generateTokens(user.id, user.email);
+
+        await  this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
+
+        return tokens;
     }
 
     private generateTokens(userId: string, email: string) {
@@ -43,5 +50,22 @@ export class AuthService {
                 expiresIn: '7d',
             }),
         };
+    }
+
+    //토큰 갱신
+    async refresh(userId: string, refreshToken: string) {
+        const user = await this.usersService.findById(userId);
+        if (!user || user.refreshToken !== refreshToken) {
+            throw new UnauthorizedException('유효하지 않은 토큰입니다');
+        }
+
+        const tokens = this.generateTokens(user.id, user.email);
+        await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
+        return tokens;
+    }
+
+    //로그아웃 (토큰 상태 비움)
+    async logout(userId: string) {
+        await this.usersService.updateRefreshToken(userId, null);
     }
 }

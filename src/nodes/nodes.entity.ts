@@ -10,6 +10,9 @@ export class Nodes {
     @JoinColumn({ name: 'canvas_id' })
     canvas: Canvas;
 
+    @Column({ name: 'canvas_id' })
+    canvasId: string;
+
     @Column({ type: 'enum', enum: ['text', 'image'] })
     type: 'text' | 'image';
 
