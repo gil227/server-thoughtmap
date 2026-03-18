@@ -8,15 +8,15 @@ export class JwtGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
-        const authHeader = request.headers.authorization;
+        const token = request.cookies['access_token'];
 
-        if (!authHeader?.startsWith('Bearer ')) {
+        if (!token) {
             throw new UnauthorizedException('토큰이 없습니다');
         }
 
-        const token = authHeader.split(' ')[1];
-
         try {
+            // 토큰 검증 후 request.user에 유저 정보 저장
+            // 이후 컨트롤러에서 req.user로 꺼내 쓸 수 있어요
             request.user = await this.jwtService.verifyAsync(token, {
                 secret: process.env.JWT_ACCESS_SECRET,
             });

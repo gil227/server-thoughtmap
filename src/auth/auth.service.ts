@@ -52,9 +52,22 @@ export class AuthService {
         };
     }
 
-    //토큰 갱신
-    async refresh(userId: string, refreshToken: string) {
-        const user = await this.usersService.findById(userId);
+    async logout(userId: string) {
+        await this.usersService.updateRefreshToken(userId, null);
+    }
+
+    async refreshFromToken(refreshToken: string) {
+        let payload: { sub: string; email: string };
+
+        try {
+            payload = this.jwtService.verify(refreshToken, {
+                secret: process.env.JWT_REFRESH_SECRET,
+            });
+        } catch {
+            throw new UnauthorizedException('유효하지 않은 토큰입니다');
+        }
+
+        const user = await this.usersService.findById(payload.sub);
         if (!user || user.refreshToken !== refreshToken) {
             throw new UnauthorizedException('유효하지 않은 토큰입니다');
         }
@@ -62,10 +75,5 @@ export class AuthService {
         const tokens = this.generateTokens(user.id, user.email);
         await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
         return tokens;
-    }
-
-    //로그아웃 (토큰 상태 비움)
-    async logout(userId: string) {
-        await this.usersService.updateRefreshToken(userId, null);
     }
 }
