@@ -3,7 +3,7 @@ import {AuthService} from "./auth.service";
 import {SignupDto} from "./dto/signup.dto";
 import {LoginDto} from "./dto/login.dto";
 import {JwtGuard} from "./guards/jwt.guard";
-import express from 'express';
+import type {Response} from 'express';
 
 const cookieOptions = {
     httpOnly: true, // JS에서 쿠키 접근 차단 (XSS 방어 핵심)
@@ -17,7 +17,7 @@ export class AuthController {
     }
 
     @Post('signup')
-    async signup(@Body() dto: SignupDto, @Res() res: express.Response) {
+    async signup(@Body() dto: SignupDto, @Res() res: Response) {
         const tokens = await this.authService.signup(dto.email, dto.password);
 
         res.cookie('access_token', tokens.accessToken, {
@@ -33,7 +33,7 @@ export class AuthController {
     }
 
     @Post('login')
-    async login(@Body() dto: LoginDto, @Res() res: express.Response) {
+    async login(@Body() dto: LoginDto, @Res() res: Response) {
         const tokens = await this.authService.login(dto.email, dto.password);
 
         res.cookie('access_token', tokens.accessToken, {
@@ -55,7 +55,7 @@ export class AuthController {
     }
 
     @Post('refresh')
-    async refresh(@Request() req: any, @Res() res: express.Response) {
+    async refresh(@Request() req: any, @Res() res: Response) {
         const refreshToken = req.cookies['refresh_token'];
         if (!refreshToken) {
             return res.status(401).json({ message: '토큰이 없습니다' });
@@ -73,7 +73,7 @@ export class AuthController {
 
     @Post('logout')
     @UseGuards(JwtGuard)
-    async logout(@Request() req: { user: { sub: string } }, @Res() res: express.Response) {
+    async logout(@Request() req: { user: { sub: string } }, @Res() res:Response) {
         await this.authService.logout(req.user.sub);
 
         res.clearCookie('access_token', cookieOptions);
