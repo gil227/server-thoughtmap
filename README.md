@@ -1,98 +1,130 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Thoughtmap Server
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+> Thoughtmap의 백엔드 API 서버
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 기술 스택
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| 항목 | 기술                                 |
+|------|------------------------------------|
+| 언어 | TypeScript                         |
+| 프레임워크 | NestJS                             |
+| DB | Supabase                           |
+| ORM | TypeORM                            |
+| 인증 | JWT (Access Token + Refresh Token) |
+| 배포 | Render                             |
 
-## Project setup
+---
 
-```bash
-$ pnpm install
+## 주요 기능
+
+- 회원가입 / 로그인 (JWT 인증)
+- Access Token + Refresh Token 발급 및 갱신
+- 캔버스 CRUD
+- 노드 CRUD
+- 엣지 CRUD
+
+---
+
+## DB 설계
+
+```
+users
+├── id           UUID (PK)
+├── email        VARCHAR (unique)
+├── password     VARCHAR (hashed)
+└── created_at   TIMESTAMP
+
+canvases
+├── id           UUID (PK)
+├── user_id      UUID (FK → users)
+├── title        VARCHAR
+├── created_at   TIMESTAMP
+└── updated_at   TIMESTAMP
+
+nodes
+├── id           UUID (PK)
+├── canvas_id    UUID (FK → canvases)
+├── type         ENUM (text | image)
+├── content      TEXT
+├── position_x   FLOAT
+├── position_y   FLOAT
+├── width        FLOAT
+├── height       FLOAT
+└── created_at   TIMESTAMP
+
+edges
+├── id               UUID (PK)
+├── canvas_id        UUID (FK → canvases)
+├── source_node_id   UUID (FK → nodes)
+├── target_node_id   UUID (FK → nodes)
+├── edge_type        ENUM (arrow | hierarchy)
+└── created_at       TIMESTAMP
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ pnpm run start
+## API 엔드포인트
 
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+### 인증
+```
+POST /auth/signup       회원가입
+POST /auth/login        로그인
+POST /auth/refresh      토큰 갱신
+POST /auth/logout       로그아웃
 ```
 
-## Run tests
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+### 캔버스
+```
+GET    /canvases         내 캔버스 목록
+POST   /canvases         캔버스 생성
+GET    /canvases/:id     캔버스 단건 조회
+PATCH  /canvases/:id     캔버스 수정
+DELETE /canvases/:id     캔버스 삭제
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+### 노드
+```
+GET    /canvases/:id/nodes        노드 목록
+POST   /canvases/:id/nodes        노드 생성
+PATCH  /canvases/:id/nodes/:nodeId   노드 수정
+DELETE /canvases/:id/nodes/:nodeId   노드 삭제
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 엣지
+```
+GET    /canvases/:id/edges        엣지 목록
+POST   /canvases/:id/edges        엣지 생성
+DELETE /canvases/:id/edges/:edgeId   엣지 삭제
+```
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 환경변수
 
-## Support
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/thoughtmap
+JWT_ACCESS_SECRET=your_access_secret
+JWT_REFRESH_SECRET=your_refresh_secret
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+PORT=3000
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## 프로젝트 구조
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```
+src/
+├── auth/            # 인증 모듈 (JWT, Guard)
+├── users/           # 유저 모듈
+├── canvases/        # 캔버스 모듈
+├── nodes/           # 노드 모듈
+├── edges/           # 엣지 모듈
+├── common/          # 공통 유틸, 인터셉터, 필터
+└── main.ts
+```
