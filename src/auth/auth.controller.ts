@@ -20,6 +20,8 @@ const cookieOptions = {
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 크로스 도메인 허용 (배포환경)
 } as const;
 
+type CookieRequest = { cookies: { refresh_token?: string } };
+
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -65,7 +67,8 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(@Request() req: any, @Res() res: Response) {
+  @HttpCode(200)
+  async refresh(@Request() req: CookieRequest, @Res() res: Response) {
     const refreshToken = req.cookies['refresh_token'];
     if (!refreshToken) {
       return res.status(401).json({ message: '토큰이 없습니다' });
@@ -76,6 +79,10 @@ export class AuthController {
     res.cookie('access_token', tokens.accessToken, {
       ...cookieOptions,
       maxAge: 15 * 60 * 1000,
+    });
+    res.cookie('refresh_token', tokens.refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.json({ success: true });
